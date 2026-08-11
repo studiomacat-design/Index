@@ -1,0 +1,613 @@
+<meta name='viewport' content='width=device-width, initial-scale=1'/>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Studio Macat - Storyboard Interface</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:ital,wght@0,300;0,400;0,600;0,700;1,400&display=swap');
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: 'JetBrains Mono', monospace;
+    }
+
+    body {
+      background-color: #0f172a;
+      color: #0f172a;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 20px;
+    }
+
+    /* Fixed Control Bar */
+    .toolbar {
+      position: sticky;
+      top: 10px;
+      z-index: 2000;
+      width: 210mm;
+      max-width: 100%;
+      background: #1e293b;
+      color: #f8fafc;
+      padding: 12px 20px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-radius: 8px;
+      box-shadow: 0 10px 25px rgba(0,0,0,0.5);
+      margin-bottom: 20px;
+    }
+
+    .toolbar-left, .toolbar-right {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .brand-title {
+      font-weight: 700;
+      font-size: 15px;
+      letter-spacing: -0.5px;
+      color: #38bdf8;
+    }
+
+    .mode-badge {
+      font-size: 11px;
+      font-weight: 700;
+      padding: 4px 10px;
+      border-radius: 4px;
+      background: #0284c7;
+      color: #fff;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .mode-badge.editing {
+      background: #16a34a;
+    }
+
+    .btn {
+      padding: 7px 14px;
+      border: none;
+      border-radius: 5px;
+      background: #0284c7;
+      color: white;
+      font-weight: 600;
+      font-size: 12px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .btn:hover {
+      background: #0369a1;
+    }
+
+    .btn-add-page {
+      background: #16a34a;
+      display: none;
+    }
+
+    .btn-add-page:hover {
+      background: #15803d;
+    }
+
+    body.is-editing .btn-add-page {
+      display: inline-flex;
+    }
+
+    .btn-delete-page {
+      background: #dc2626;
+      font-size: 10px;
+      padding: 3px 8px;
+      display: none;
+    }
+
+    body.is-editing .btn-delete-page {
+      display: inline-block;
+    }
+
+    /* Document View Wrapper */
+    .document-wrapper {
+      display: flex;
+      flex-direction: column;
+      gap: 30px;
+    }
+
+    /* Fixed A4 Page Sheet Ratio */
+    .sheet {
+      width: 210mm;
+      height: 297mm;
+      background: #ffffff;
+      border: 2px solid #000;
+      padding: 12mm 12mm 12mm 12mm;
+      display: flex;
+      flex-direction: column;
+      box-shadow: 0 15px 30px rgba(0, 0, 0, 0.3);
+      position: relative;
+      box-sizing: border-box;
+      page-break-after: always;
+    }
+
+    /* COVER PAGE STYLING */
+    .sheet.cover-page {
+      padding: 0;
+      overflow: hidden;
+      background-color: #000;
+    }
+
+    .cover-image {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    /* STORYBOARD PAGE HEADER */
+    .sheet-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      height: 35px;
+      margin-bottom: 5px;
+    }
+
+    .page-number-tag {
+      font-size: 12px;
+      font-weight: 700;
+    }
+
+    .logo-macat {
+      width: 32px;
+      height: 32px;
+      background-color: #0b2582;
+      color: #ffffff;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 7px;
+      font-weight: bold;
+      text-align: center;
+      line-height: 1;
+    }
+
+    /* STORYBOARD TABLE */
+    .storyboard-table {
+      width: 100%;
+      height: calc(100% - 40px);
+      border-collapse: collapse;
+      table-layout: fixed;
+    }
+
+    .storyboard-table th, 
+    .storyboard-table td {
+      border: 1.5px solid #000;
+      padding: 0;
+      margin: 0;
+      vertical-align: top;
+    }
+
+    .storyboard-table th {
+      background-color: #fff;
+      font-size: 11px;
+      font-weight: 700;
+      text-align: center;
+      padding: 4px 0;
+      height: 22px;
+    }
+
+    /* Column Sizing */
+    .col-kf { width: 6%; }
+    .col-picture { width: 44%; }
+    .col-caption { width: 40%; }
+    .col-dur { width: 10%; }
+
+    .storyboard-table tbody tr {
+      height: 19.5%;
+    }
+
+    /* Cell Controls */
+    .cell-input {
+      width: 100%;
+      height: 100%;
+      border: none;
+      outline: none;
+      background: transparent;
+      text-align: center;
+      font-size: 12px;
+      font-weight: 600;
+    }
+
+    /* MEDIA BOX (16:9 box with independent media ratio) */
+    .picture-container {
+      width: 100%;
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+      background: #f1f5f9;
+      overflow: hidden;
+    }
+
+    .media-preview {
+      width: 100%;
+      height: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .media-preview img, 
+    .media-preview video {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    .upload-btn {
+      display: none;
+      position: absolute;
+      bottom: 6px;
+      background: rgba(15, 23, 42, 0.85);
+      color: #fff;
+      font-size: 10px;
+      padding: 4px 8px;
+      border-radius: 3px;
+      cursor: pointer;
+      z-index: 5;
+    }
+
+    body.is-editing .upload-btn {
+      display: block;
+    }
+
+    .upload-btn input {
+      display: none;
+    }
+
+    /* CAPTION SPLIT LAYOUT */
+    .caption-split {
+      display: flex;
+      width: 100%;
+      height: 100%;
+    }
+
+    .caption-box {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      border-right: 1.5px solid #000;
+      height: 100%;
+    }
+
+    .caption-box:last-child {
+      border-right: none;
+    }
+
+    .caption-title {
+      font-size: 10px;
+      font-weight: 700;
+      padding: 3px 5px;
+      background: #fff;
+      border-bottom: 1px solid #cbd5e1;
+    }
+
+    .caption-textarea {
+      flex: 1;
+      width: 100%;
+      border: none;
+      outline: none;
+      resize: none;
+      padding: 5px;
+      font-size: 11px;
+      background: transparent;
+      line-height: 1.3;
+    }
+
+    /* DURATION PICKER */
+    .duration-picker-container {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      height: 100%;
+      padding: 2px;
+      gap: 3px;
+    }
+
+    .dur-field {
+      display: flex;
+      align-items: center;
+      gap: 2px;
+      font-size: 10px;
+      font-weight: 600;
+    }
+
+    .dur-input {
+      width: 32px;
+      text-align: center;
+      border: 1px solid transparent;
+      background: transparent;
+      font-size: 11px;
+      font-weight: 700;
+      outline: none;
+    }
+
+    /* EDIT MODE VISUAL INDICATORS */
+    body.is-editing .cell-input:not([readonly]),
+    body.is-editing .caption-textarea:not([readonly]),
+    body.is-editing .dur-input:not([readonly]) {
+      background-color: #f0f9ff;
+      border-color: #93c5fd;
+    }
+
+    body.is-editing .cell-input:focus,
+    body.is-editing .caption-textarea:focus,
+    body.is-editing .dur-input:focus {
+      background-color: #e0f2fe;
+      border-color: #0284c7;
+    }
+
+    /* MODAL STYLING */
+    .modal {
+      display: none;
+      position: fixed;
+      top: 0; left: 0; width: 100%; height: 100%;
+      background: rgba(15, 23, 42, 0.75);
+      backdrop-filter: blur(4px);
+      justify-content: center;
+      align-items: center;
+      z-index: 3000;
+    }
+
+    .modal-card {
+      background: white;
+      padding: 24px;
+      border-radius: 8px;
+      width: 300px;
+      text-align: center;
+      box-shadow: 0 10px 25px rgba(0,0,0,0.3);
+    }
+
+    .modal-card h3 {
+      font-size: 15px;
+      margin-bottom: 6px;
+    }
+
+    .modal-card p {
+      font-size: 11px;
+      color: #64748b;
+      margin-bottom: 12px;
+    }
+
+    .modal-card input {
+      width: 100%;
+      padding: 8px;
+      margin-bottom: 16px;
+      border: 1px solid #cbd5e1;
+      border-radius: 4px;
+      text-align: center;
+      font-size: 14px;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Controls Header -->
+  <div class="toolbar">
+    <div class="toolbar-left">
+      <span class="brand-title">STUDIO MACAT</span>
+      <span id="modeTag" class="mode-badge">View Mode</span>
+    </div>
+    <div class="toolbar-right">
+      <button class="btn btn-add-page" onclick="addNewPage()">+ Add Page</button>
+      <button id="toggleBtn" class="btn" onclick="toggleMode()">Switch to Edit Mode</button>
+    </div>
+  </div>
+
+  <!-- Document Container -->
+  <div class="document-wrapper" id="documentWrapper">
+    
+    <!-- COVER PAGE (Page 1) -->
+    <div class="sheet cover-page">
+      <img src="image_3.png" alt="Studio Macat Storyboard Cover" class="cover-image">
+    </div>
+
+    <!-- Storyboard Pages will be injected here -->
+
+  </div>
+
+  <!-- Password Verification Modal -->
+  <div id="passwordModal" class="modal">
+    <div class="modal-card">
+      <h3>Authentication Required</h3>
+      <p>Enter password to unlock Edit Mode</p>
+      <input type="password" id="passwordInput" placeholder="Password">
+      <div style="display: flex; gap: 8px;">
+        <button class="btn" style="flex: 1;" onclick="checkPassword()">Submit</button>
+        <button class="btn" style="flex: 1; background: #64748b;" onclick="closeModal()">Cancel</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    let isEditing = false;
+    let pageCount = 0;
+    const FRAMES_PER_PAGE = 5;
+
+    // Build standard storyboard sheet template
+    function createPageElement(pageIndex) {
+      const pageNum = pageIndex + 1;
+      const sheet = document.createElement('div');
+      sheet.className = 'sheet storyboard-sheet';
+      sheet.id = `page-${pageNum}`;
+
+      let rowsHTML = '';
+      for (let i = 1; i <= FRAMES_PER_PAGE; i++) {
+        const globalFrameIndex = (pageIndex * FRAMES_PER_PAGE) + i;
+        rowsHTML += `
+          <tr>
+            <td class="col-kf">
+              <input type="text" class="cell-input editable" value="${globalFrameIndex}" readonly>
+            </td>
+            <td class="col-picture">
+              <div class="picture-container">
+                <div class="media-preview" id="preview-${pageNum}-${i}"></div>
+                <label class="upload-btn">
+                  Upload Media
+                  <input type="file" class="media-file-input" accept="image/*,video/*" disabled onchange="renderMedia(event, '${pageNum}-${i}')">
+                </label>
+              </div>
+            </td>
+            <td class="col-caption">
+              <div class="caption-split">
+                <div class="caption-box">
+                  <div class="caption-title">Action Notes</div>
+                  <textarea class="caption-textarea editable" readonly placeholder="Type action notes..."></textarea>
+                </div>
+                <div class="caption-box">
+                  <div class="caption-title">Dialog</div>
+                  <textarea class="caption-textarea editable" readonly placeholder="Type dialog..."></textarea>
+                </div>
+              </div>
+            </td>
+            <td class="col-dur">
+              <div class="duration-picker-container">
+                <div class="dur-field">
+                  <input type="number" class="dur-input editable" value="0" min="0" max="59" readonly>s
+                </div>
+                <div class="dur-field">
+                  <input type="number" class="dur-input editable" value="0" min="0" max="23" readonly>f
+                </div>
+              </div>
+            </td>
+          </tr>
+        `;
+      }
+
+      sheet.innerHTML = `
+        <div class="sheet-header">
+          <span class="page-number-tag">PAGE ${pageNum}</span>
+          <button class="btn btn-delete-page" onclick="deletePage('${sheet.id}')">Delete Page</button>
+          <div class="logo-macat">MACAT</div>
+        </div>
+        <table class="storyboard-table">
+          <thead>
+            <tr>
+              <th class="col-kf">K.F</th>
+              <th class="col-picture">Picture (16:9)</th>
+              <th class="col-caption">Caption</th>
+              <th class="col-dur">Dur.</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${rowsHTML}
+          </tbody>
+        </table>
+      `;
+
+      return sheet;
+    }
+
+    function addNewPage() {
+      const wrapper = document.getElementById('documentWrapper');
+      const newSheet = createPageElement(pageCount);
+      wrapper.appendChild(newSheet);
+      pageCount++;
+      applyMode(isEditing);
+    }
+
+    function deletePage(pageId) {
+      if (confirm('Are you sure you want to delete this page?')) {
+        const targetPage = document.getElementById(pageId);
+        if (targetPage) {
+          targetPage.remove();
+        }
+      }
+    }
+
+    function toggleMode() {
+      if (isEditing) {
+        applyMode(false);
+      } else {
+        document.getElementById('passwordModal').style.display = 'flex';
+        document.getElementById('passwordInput').value = '';
+        document.getElementById('passwordInput').focus();
+      }
+    }
+
+    function checkPassword() {
+      const input = document.getElementById('passwordInput').value;
+      if (input === 'arc-05') {
+        closeModal();
+        applyMode(true);
+      } else {
+        alert('Incorrect Password!');
+      }
+    }
+
+    function closeModal() {
+      document.getElementById('passwordModal').style.display = 'none';
+    }
+
+    function applyMode(editState) {
+      isEditing = editState;
+      const body = document.body;
+      const modeTag = document.getElementById('modeTag');
+      const toggleBtn = document.getElementById('toggleBtn');
+      const editables = document.querySelectorAll('.editable');
+      const fileInputs = document.querySelectorAll('.media-file-input');
+
+      if (isEditing) {
+        body.classList.add('is-editing');
+        modeTag.textContent = 'Edit Mode';
+        modeTag.classList.add('editing');
+        toggleBtn.textContent = 'Switch to View Mode';
+
+        editables.forEach(el => el.removeAttribute('readonly'));
+        fileInputs.forEach(el => el.removeAttribute('disabled'));
+      } else {
+        body.classList.remove('is-editing');
+        modeTag.textContent = 'View Mode';
+        modeTag.classList.remove('editing');
+        toggleBtn.textContent = 'Switch to Edit Mode';
+
+        editables.forEach(el => el.setAttribute('readonly', 'true'));
+        fileInputs.forEach(el => el.setAttribute('disabled', 'true'));
+      }
+    }
+
+    function renderMedia(event, targetId) {
+      const file = event.target.files[0];
+      if (!file) return;
+
+      const container = document.getElementById(`preview-${targetId}`);
+      container.innerHTML = '';
+      const objectUrl = URL.createObjectURL(file);
+
+      if (file.type.startsWith('image/')) {
+        const img = document.createElement('img');
+        img.src = objectUrl;
+        container.appendChild(img);
+      } else if (file.type.startsWith('video/')) {
+        const video = document.createElement('video');
+        video.src = objectUrl;
+        video.controls = true;
+        container.appendChild(video);
+      }
+    }
+
+    window.onload = () => {
+      addNewPage();
+    };
+  </script>
+</body>
+</html>
